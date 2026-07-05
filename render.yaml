@@ -11,7 +11,7 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     plan: starter
-    region: oregon
+    region: singapore
     healthCheckPath: /healthz
     autoDeploy: true
     envVars:
@@ -36,13 +36,13 @@ services:
   - type: redis
     name: ox-arena-redis
     plan: starter
-    region: oregon
+    region: singapore
     maxmemoryPolicy: noeviction # matchmaking/presence must not be evicted
     ipAllowList: [] # only reachable from Render services
 
 databases:
   - name: ox-arena-db
-    plan: free
-    region: oregon
+    plan: basic-256mb # paid tier: does NOT expire (free Postgres is deleted after 30 days)
+    region: singapore
     databaseName: oxarena
     postgresMajorVersion: "16"
