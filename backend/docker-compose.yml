@@ -1,0 +1,42 @@
+# Local infrastructure for development / testing against real Redis + Postgres.
+# The app itself runs on your host (npm run dev) and connects to these.
+#
+#   docker compose up -d
+#   export REDIS_URL=redis://localhost:6379
+#   export DATABASE_URL=postgres://oxarena:oxarena@localhost:5432/oxarena
+#   psql "$DATABASE_URL" -f src/db/schema.sql
+#   npm run dev
+#
+# (Not required for basic dev — with no REDIS_URL/DATABASE_URL the app uses the
+#  in-memory shim and skips persistence.)
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--maxmemory-policy", "noeviction"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: oxarena
+      POSTGRES_PASSWORD: oxarena
+      POSTGRES_DB: oxarena
+    volumes:
+      - oxarena_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oxarena"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  oxarena_pg:

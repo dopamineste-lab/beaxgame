@@ -1,0 +1,28 @@
+# Node / backend
+node_modules/
+dist/
+*.log
+.env
+.env.*
+!.env.example
+coverage/
+.DS_Store
+
+# Android / Gradle
+.gradle/
+android/build/
+android/app/build/
+android/**/build/
+android/local.properties
+android/.idea/
+android/captures/
+*.iml
+*.apk
+*.aab
+*.keystore
+!debug.keystore
+
+# IDE
+.vscode/
+.idea/
+*.swp
