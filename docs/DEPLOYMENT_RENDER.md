@@ -16,16 +16,12 @@ Postgres together.
    - `REDIS_URL` and `DATABASE_URL` are injected from the two data services
 5. Click **Apply**. First deploy builds the image and starts the service.
 
-## Initialize the database schema
+## Database schema — automatic
 
-After the first deploy, apply the schema once (from any machine with `psql` and
-the external `DATABASE_URL` from the Render dashboard):
-
-```bash
-psql "$DATABASE_URL" -f backend/src/db/schema.sql
-```
-
-The schema is idempotent (`IF NOT EXISTS`), so re-running is safe.
+No manual step. On boot the server applies `schema.sql` (idempotent,
+`IF NOT EXISTS` throughout) to the configured database, so a fresh Render
+Postgres is ready the moment the first deploy goes live. Watch for
+`Database schema ensured` in the service logs.
 
 ## Health checks & lifecycle
 

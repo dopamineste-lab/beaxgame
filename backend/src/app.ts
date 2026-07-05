@@ -38,7 +38,25 @@ export async function buildServer(): Promise<BuiltServer> {
 
   // REST bootstrap: clients that prefer to obtain a token before opening the
   // socket can POST here. (The socket handshake also mints one automatically.)
-  app.post('/api/session', async () => {
+  // Rate-limited per IP: minting creates DB rows, so it must not be spammable.
+  const sessionMints = new Map<string, { count: number; windowStart: number }>();
+  const MINT_LIMIT = 10;
+  const MINT_WINDOW_MS = 60_000;
+  app.post('/api/session', async (req, reply) => {
+    const now = Date.now();
+    const entry = sessionMints.get(req.ip);
+    if (!entry || now - entry.windowStart > MINT_WINDOW_MS) {
+      sessionMints.set(req.ip, { count: 1, windowStart: now });
+    } else if (++entry.count > MINT_LIMIT) {
+      reply.code(429);
+      return { error: 'RATE_LIMITED', message: 'Too many session requests.' };
+    }
+    // Opportunistic cleanup keeps the map bounded.
+    if (sessionMints.size > 10_000) {
+      for (const [ip, e] of sessionMints) {
+        if (now - e.windowStart > MINT_WINDOW_MS) sessionMints.delete(ip);
+      }
+    }
     const session = await issueSession();
     return { token: session.token, playerId: session.playerId, expiresAt: session.expiresAt };
   });

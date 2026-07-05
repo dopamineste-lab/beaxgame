@@ -21,8 +21,13 @@ android/captures/
 *.aab
 *.keystore
 !debug.keystore
+android/keystore/
+android/keystore.properties
 
 # IDE
 .vscode/
 .idea/
 *.swp
+
+# Kotlin compiler session files
+android/.kotlin/

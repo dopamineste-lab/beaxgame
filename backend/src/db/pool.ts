@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import pg from 'pg';
 import { env, isProduction, persistenceDisabled } from '../config/env.js';
 import { logger } from '../logger.js';
@@ -44,5 +47,27 @@ export async function pingDatabase(): Promise<boolean> {
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Apply the idempotent schema (CREATE ... IF NOT EXISTS throughout) on startup so
+ * a fresh Render Postgres is usable with zero manual steps. `schema.sql` sits next
+ * to this module in both dev (src/db) and the built image (dist/db — the Dockerfile
+ * copies it there), so resolving relative to the module works in both.
+ */
+export async function ensureSchema(): Promise<void> {
+  if (!pool) return;
+  try {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const sql = readFileSync(join(here, 'schema.sql'), 'utf8');
+    await pool.query(sql);
+    logger.info('Database schema ensured');
+  } catch (err) {
+    // Non-fatal: the server still serves matches without persistence rather than
+    // crash-looping, and /readyz will surface the degraded database.
+    logger.error('Failed to ensure database schema', {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }

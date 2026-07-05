@@ -10,15 +10,16 @@ Legend: ✅ done in this slice · 🔜 roadmap before large-scale launch
 - ✅ Typed, validated env config; refuses default JWT secret in prod
 - ✅ Dockerized (multi-stage, non-root runtime user)
 - ✅ Reconnect grace window + duplicate-connection eviction
-- 🔜 Rate limiting per connection/IP (Redis token bucket)
+- ✅ Rate limiting: token bucket per socket (abusive clients disconnected) + per-IP limit on session minting
+- ✅ Zod schema validation on every inbound socket payload
 - 🔜 Socket.IO Redis adapter + Redis-backed game state for horizontal scale
 - 🔜 Metrics (Prometheus) + tracing; alerting on error rate / queue depth
 - 🔜 Load/stress testing (k6/artillery) to size instances
 
 ## Data
 - ✅ PostgreSQL schema (matches, moves, sessions, players + roadmap tables)
-- ✅ Idempotent schema migration file
-- 🔜 Managed migrations tool (e.g. node-pg-migrate) instead of raw SQL apply
+- ✅ Idempotent schema migration file, **auto-applied on boot** (zero manual steps on Render)
+- 🔜 Managed migrations tool (e.g. node-pg-migrate) once schema evolves beyond additive
 - 🔜 Backups / PITR configured on the managed DB
 - 🔜 Redis `noeviction` verified (set in `render.yaml`) and memory alerts
 
@@ -26,7 +27,8 @@ Legend: ✅ done in this slice · 🔜 roadmap before large-scale launch
 - ✅ Builds a signed-able debug APK; Clean Architecture; Hilt DI
 - ✅ Immutable StateFlow UI; edge-to-edge; dark premium theme
 - ✅ Reconnect/resume via persisted anonymous token
-- 🔜 Release signing config + Play App Signing
+- ✅ Release signing (keystore.properties, keystore gitignored); verified 2.3MB minified signed APK
+- 🔜 Play App Signing enrollment when publishing to Play Store
 - 🔜 Baseline Profiles + startup optimization; R8 rules validated
 - 🔜 Crash/ANR reporting (Crashlytics or Sentry)
 - 🔜 Compose UI + instrumented tests in CI (emulator matrix)

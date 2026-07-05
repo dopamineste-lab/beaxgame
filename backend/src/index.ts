@@ -1,7 +1,7 @@
 import { buildServer } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './logger.js';
-import { pool } from './db/pool.js';
+import { ensureSchema, pool } from './db/pool.js';
 import { redis } from './redis/client.js';
 
 /**
@@ -10,6 +10,7 @@ import { redis } from './redis/client.js';
  * (which Render sends on deploy/scale-down).
  */
 async function main(): Promise<void> {
+  await ensureSchema(); // no-op without DATABASE_URL; idempotent otherwise
   const { app, io } = await buildServer();
 
   await app.listen({ port: env.PORT, host: '0.0.0.0' });

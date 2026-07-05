@@ -20,8 +20,9 @@ Legend: ✅ implemented · 🔜 roadmap
 - ✅ Fully authoritative: every move re-validated by the pure engine
   (turn, occupancy, range, terminal) — a modified client cannot forge state
 - ✅ Match membership enforced (`NOT_IN_MATCH`) — cannot move in others' games
-- ✅ Payload validation on inbound events (`BAD_PAYLOAD`)
-- 🔜 Rate limiting / flood protection per connection (anti packet-injection/replay)
+- ✅ Payload validation on inbound events — zod schemas on every socket event (`BAD_PAYLOAD`)
+- ✅ Flood protection: per-socket token bucket (20 burst / 10 per second, `RATE_LIMITED`),
+  persistent flooders force-disconnected; per-IP limit on `/api/session`
 - 🔜 Move-timing analysis on `match_moves` (anti speed-hack)
 - 🔜 Reports/bans pipeline (tables exist) + automated abuse detection
 
@@ -29,7 +30,7 @@ Legend: ✅ implemented · 🔜 roadmap
 - ✅ Parameterized SQL everywhere (no string interpolation) — SQLi-safe
 - ✅ No user-generated HTML rendered → XSS surface minimal
 - ✅ Least-privilege DB usage via connection string
-- 🔜 Input length caps + schema validation (zod) on all socket payloads
+- ✅ Schema validation (zod) with strict types/bounds on all socket payloads
 - 🔜 Audit logging of sensitive actions
 
 ## Operations

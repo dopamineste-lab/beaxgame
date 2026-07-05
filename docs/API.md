@@ -88,7 +88,8 @@ GameState {
 | `GAME_OVER` | Move after the game ended |
 | `MATCH_NOT_FOUND` | Unknown/removed match |
 | `NOT_IN_MATCH` | Player not part of that match |
-| `BAD_PAYLOAD` | Malformed move payload |
+| `BAD_PAYLOAD` | Malformed payload (fails schema validation) |
+| `RATE_LIMITED` | Too many events too fast; persistent flooding disconnects |
 | `REPLACED` | Superseded by a newer connection for the same identity |
 
 ### Reconnect

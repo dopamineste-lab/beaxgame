@@ -16,6 +16,12 @@ val backendUrl: String = run {
     props.getProperty("BACKEND_URL") ?: "http://10.0.2.2:8080"
 }
 
+// Release signing from keystore.properties (gitignored). See keystore.properties.example.
+val keystoreProps: Properties? = run {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) Properties().apply { f.inputStream().use { load(it) } } else null
+}
+
 android {
     namespace = "com.oxarena"
     compileSdk = 34
@@ -33,6 +39,17 @@ android {
         buildConfigField("String", "BACKEND_URL", "\"$backendUrl\"")
     }
 
+    signingConfigs {
+        if (keystoreProps != null) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
@@ -41,6 +58,13 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Sign with the release keystore when configured; otherwise fall back to
+            // the debug key so `assembleRelease` still produces an installable APK.
+            signingConfig = if (keystoreProps != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 

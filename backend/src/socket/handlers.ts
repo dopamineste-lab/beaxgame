@@ -1,4 +1,5 @@
 import type { Server, Socket } from 'socket.io';
+import { z } from 'zod';
 import { env } from '../config/env.js';
 import { GameError, type GameMode } from '../game/types.js';
 import {
@@ -19,12 +20,25 @@ import {
   type ServerToClientEvents,
   type SocketData,
 } from './protocol.js';
+import { TokenBucket } from './rateLimit.js';
 
 type AppServer = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
 type AppSocket = Socket<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
 
 const SUPPORTED_MODES: GameMode[] = ['classic'];
 const COUNTDOWN_MS = 3000;
+
+// ─── Inbound payload validation (zod) ────────────────────────────────────────
+// Every client-supplied payload is schema-validated before any handler logic
+// runs; anything malformed is rejected with BAD_PAYLOAD.
+const joinSchema = z
+  .object({ mode: z.enum(['classic', 'hard', 'expert', 'insane', 'nightmare', 'impossible']).optional() })
+  .nullish();
+const moveSchema = z.object({
+  matchId: z.string().uuid(),
+  index: z.number().int().min(0).max(64), // upper bound covers the largest roadmap board (8x8)
+});
+const leaveSchema = z.object({ matchId: z.string().uuid() });
 
 /** playerId → their current live socket (one connection per identity). */
 const socketsByPlayer = new Map<string, AppSocket>();
@@ -71,10 +85,47 @@ export function registerSocketHandlers(io: AppServer): void {
     const resume = getMatchForPlayer(playerId);
     if (resume) resumeMatch(socket, resume, playerId);
 
-    socket.on('queue:join', (payload) => void handleJoin(socket, playerId, payload?.mode));
-    socket.on('queue:cancel', () => void handleCancel(socket, playerId));
-    socket.on('game:move', (payload) => void handleMove(io, socket, playerId, payload));
-    socket.on('game:leave', (payload) => handleLeave(io, playerId, payload?.matchId));
+    // Per-connection rate limit: bursts up to 20 events, sustained 10/s. A client
+    // that keeps flooding long past the limit is disconnected outright.
+    const bucket = new TokenBucket(20, 10);
+    const guarded = <T>(handler: (payload?: T) => void) => (payload?: T): void => {
+      if (!bucket.take()) {
+        if (bucket.abusive) {
+          logger.warn('Disconnecting abusive client', { playerId });
+          socket.disconnect(true);
+          return;
+        }
+        socket.emit('error', { code: 'RATE_LIMITED', message: 'Slow down.' });
+        return;
+      }
+      handler(payload);
+    };
+
+    socket.on('queue:join', guarded((payload) => {
+      const parsed = joinSchema.safeParse(payload);
+      if (!parsed.success) {
+        socket.emit('error', { code: 'BAD_PAYLOAD', message: 'Invalid queue payload.' });
+        return;
+      }
+      void handleJoin(socket, playerId, parsed.data?.mode);
+    }));
+    socket.on('queue:cancel', guarded(() => void handleCancel(socket, playerId)));
+    socket.on('game:move', guarded((payload) => {
+      const parsed = moveSchema.safeParse(payload);
+      if (!parsed.success) {
+        socket.emit('error', { code: 'BAD_PAYLOAD', message: 'Invalid move payload.' });
+        return;
+      }
+      void handleMove(io, socket, playerId, parsed.data);
+    }));
+    socket.on('game:leave', guarded((payload) => {
+      const parsed = leaveSchema.safeParse(payload);
+      if (!parsed.success) {
+        socket.emit('error', { code: 'BAD_PAYLOAD', message: 'Invalid leave payload.' });
+        return;
+      }
+      handleLeave(io, playerId, parsed.data.matchId);
+    }));
     socket.on('disconnect', () => void handleDisconnect(socket, playerId));
   });
 }
