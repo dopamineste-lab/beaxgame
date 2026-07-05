@@ -1,0 +1,14 @@
+# Normalize line endings to LF in the repo for all text files.
+* text=auto eol=lf
+
+# Gradle wrapper / scripts
+*.bat text eol=crlf
+gradlew text eol=lf
+
+# Binaries
+*.png binary
+*.jar binary
+*.keystore binary
+*.webp binary
+*.ttf binary
+*.otf binary

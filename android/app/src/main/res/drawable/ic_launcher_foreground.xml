@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Stylised "X" stroke -->
+    <path
+        android:strokeColor="#7C5CFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M38,38 L58,58 M58,38 L38,58" />
+    <!-- Stylised "O" ring -->
+    <path
+        android:strokeColor="#2DE2A8"
+        android:strokeWidth="7"
+        android:pathData="M70,63 m-11,0 a11,11 0 1,0 22,0 a11,11 0 1,0 -22,0" />
+</vector>
