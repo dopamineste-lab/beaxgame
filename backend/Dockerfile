@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --no-audit --no-fund
 
-COPY tsconfig.json ./
+COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
 RUN npm run build
 
