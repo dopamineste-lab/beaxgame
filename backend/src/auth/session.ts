@@ -57,7 +57,6 @@ export function signToken(playerId: string): string {
 
 /**
  * Verify a token and return the player id, or `null` if invalid/expired.
- * Also touches `last_seen_at` when persistence is enabled.
  */
 export async function verifySession(token: string | undefined): Promise<string | null> {
   if (!token) return null;

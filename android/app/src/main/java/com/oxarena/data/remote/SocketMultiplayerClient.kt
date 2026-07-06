@@ -55,7 +55,14 @@ class SocketMultiplayerClient @Inject constructor(
     private val authPayload = HashMap<String, String>()
 
     override fun connect() {
-        if (socket?.connected() == true) return
+        // Reuse the existing socket if one was ever created: it already has its
+        // listeners wired and Socket.IO handles reconnection itself. Building a
+        // second instance here (e.g. on activity recreation while offline) would
+        // duplicate every listener and double-apply state updates.
+        socket?.let {
+            if (!it.connected()) it.connect()
+            return
+        }
         _state.update { it.copy(connection = ConnectionStatus.CONNECTING) }
         scope.launch {
             tokenStore.read()?.let { authPayload["token"] = it }

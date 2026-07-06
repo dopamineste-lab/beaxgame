@@ -94,7 +94,7 @@ export async function applyPlayerMove(matchId: string, playerId: string, index: 
     if (isTerminal(next)) void persistResult(match);
   }
 
-  if (isTerminal(next)) endMatch(match.id, /*keepRecord*/ false);
+  if (isTerminal(next)) endMatch(match.id, /*abandoned*/ false);
   return next;
 }
 

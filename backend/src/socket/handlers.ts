@@ -248,14 +248,17 @@ async function handleDisconnect(socket: AppSocket, playerId: string): Promise<vo
 
   setConnected(match.id, playerId, false);
   const opponentId = match.x.playerId === playerId ? match.o.playerId : match.x.playerId;
-  socketsByPlayer.get(opponentId)?.emit('opponent:left', { matchId: match.id });
 
-  // Give the player a grace window to reconnect before abandoning the match.
+  // Give the player a grace window to reconnect. Only if it expires do we
+  // abandon the match and tell the opponent they won — notifying immediately
+  // would flash a premature victory screen for what may be a 2-second blip.
   const timer = setTimeout(() => {
     graceTimers.delete(playerId);
     const still = getMatchForPlayer(playerId);
     if (still && still.id === match.id) {
+      socketsByPlayer.get(opponentId)?.emit('opponent:left', { matchId: match.id });
       endMatch(match.id, /*abandoned*/ true);
+      socketsByPlayer.get(opponentId)?.leave(roomOf(match.id));
     }
   }, env.RECONNECT_GRACE_MS);
   graceTimers.set(playerId, timer);
