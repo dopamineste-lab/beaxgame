@@ -2,9 +2,12 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Install deps (including dev) using the lockfile for reproducible builds.
+# Install deps (including dev). `npm install` rather than `npm ci`: the lockfile
+# is generated on a Windows dev machine and npm's known cross-platform bug with
+# platform-specific optional deps (e.g. @emnapi/* pulled in only on Linux) makes
+# strict `npm ci` fail inside the Linux build container.
 COPY package*.json ./
-RUN npm ci
+RUN npm install --no-audit --no-fund
 
 COPY tsconfig.json ./
 COPY src ./src
